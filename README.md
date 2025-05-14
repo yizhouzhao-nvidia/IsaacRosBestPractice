@@ -32,3 +32,9 @@ cd ${ISAAC_ROS_WS}/src/isaac_ros_common && \
 1. [Controlling ur10e robot in Isaac Sim via ROS2 topic publishing](./1-ros2+isaac%20sim+ur10e/README.md)
 
 2. [Controlling ur10e robot via Moveit and CuMotion](./2-ur10e+CuMotion/README.md)
+
+3. [Connecting to Realsense] (Coming soon)
+
+4. [FoundationPose/Dope ur10e robot in Isaac Sim MoveIt CuMotion Loop] (Coming soon)
+
+5. [Real-Robot Practice: Putting everything together] (Coming soon)
