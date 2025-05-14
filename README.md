@@ -29,4 +29,6 @@ cd ${ISAAC_ROS_WS}/src/isaac_ros_common && \
 
 ## Tutorials
 
-1. [Controlling ur10e robot in Isaac Sim via ROS2 topic publishing](./ros2+isaac%20sim+ur10e/README.md)
+1. [Controlling ur10e robot in Isaac Sim via ROS2 topic publishing](./1-ros2+isaac%20sim+ur10e/README.md)
+
+2. [Controlling ur10e robot via Moveit and CuMotion](./2-ur10e+CuMotion/README.md)
