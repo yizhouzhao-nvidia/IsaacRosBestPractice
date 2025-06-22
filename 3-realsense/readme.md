@@ -18,6 +18,22 @@ make -j$(nproc)
 sudo make install
 ```
 
+## Docker start
+
+Add
+```
+    --device=/dev/bus/usb \
+    --device=/dev/video0 \
+    --device=/dev/video1 \
+    --device=/dev/video2 \
+    --device=/dev/video3 \
+    --device=/dev/video4 \
+    --device=/dev/video5 \
+    --device=/dev/media0 \
+    --device=/dev/media1 \
+```
+
+
 [Update Fireware](https://dev.intelrealsense.com/docs/firmware-update-tool) if necessary
 
 
@@ -26,6 +42,49 @@ sudo make install
 See [Realsense Ros Github](https://github.com/IntelRealSense/realsense-ros?tab=readme-ov-file)
 
 ```
+sudo apt update
 sudo apt install ros-humble-librealsense2*
 sudo apt install ros-humble-realsense2-*
+```
+
+# Debug
+sudo apt install v4l-utils
+v4l2-ctl --list-devices
+
+# 3. Start Node
+```bash
+ros2 launch realsense2_camera rs_launch.py
+```
+
+List ros2 topics, 
+
+```bash
+ros2 topic list
+```
+
+And you should see
+
+```
+/camera/camera/color/camera_info
+/camera/camera/color/image_raw
+/camera/camera/color/image_raw/compressed
+/camera/camera/color/image_raw/compressedDepth
+/camera/camera/color/image_raw/theora
+/camera/camera/color/metadata
+/camera/camera/depth/camera_info
+/camera/camera/depth/image_rect_raw
+/camera/camera/depth/image_rect_raw/compressed
+/camera/camera/depth/image_rect_raw/compressedDepth
+/camera/camera/depth/image_rect_raw/theora
+/camera/camera/depth/metadata
+/camera/camera/extrinsics/depth_to_color
+/parameter_events
+/rosout
+/tf_static
+```
+
+# Visualization
+
+```bash
+ros2 run rqt_image_view rqt_image_view /rtdetr_processed_image
 ```
