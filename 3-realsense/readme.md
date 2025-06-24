@@ -41,20 +41,26 @@ Add
 
 See [Realsense Ros Github](https://github.com/IntelRealSense/realsense-ros?tab=readme-ov-file)
 
-```
+```bash
 sudo apt update
-sudo apt install ros-humble-librealsense2*
-sudo apt install ros-humble-realsense2-*
+sudo apt install -y ros-humble-librealsense2*
+sudo apt install -y ros-humble-realsense2-*
 ```
 
 # Debug
+```bash
 sudo apt install v4l-utils
 v4l2-ctl --list-devices
+```
 
 # 3. Start Node
 ```bash
 ros2 launch realsense2_camera rs_launch.py
+ros2 launch realsense2_camera rs_launch.py rgb_camera.color_profile:=640x480x30 depth_module.depth_profile:=640x480x30 pointcloud.enable:=false
 ```
+
+
+
 
 List ros2 topics, 
 
@@ -86,5 +92,5 @@ And you should see
 # Visualization
 
 ```bash
-ros2 run rqt_image_view rqt_image_view /rtdetr_processed_image
+ros2 run rqt_image_view rqt_image_view 
 ```
