@@ -39,8 +39,12 @@ Add
 
 # 2. With Docker publish image:
 
-See [Realsense Ros Github](https://github.com/IntelRealSense/realsense-ros?tab=readme-ov-file)
+```bash
+cd ${ISAAC_ROS_WS}/src/isaac_ros_common && \
+./scripts/run_dev.sh
+```
 
+See [Realsense Ros Github](https://github.com/IntelRealSense/realsense-ros?tab=readme-ov-file)
 ```bash
 sudo apt update
 sudo apt install -y ros-humble-librealsense2*
@@ -57,6 +61,8 @@ v4l2-ctl --list-devices
 ```bash
 ros2 launch realsense2_camera rs_launch.py
 ros2 launch realsense2_camera rs_launch.py rgb_camera.color_profile:=640x480x30 depth_module.depth_profile:=640x480x30 pointcloud.enable:=false
+ros2 launch realsense2_camera rs_launch.py rgb_camera.color_profile:=640x480x30 depth_module.depth_profile:=640x480x30 pointcloud.enable:=false enable_rgbd:=true enable_sync:=true align_depth.enable:=true enable_color:=true enable_depth:=true 
+
 ```
 
 
