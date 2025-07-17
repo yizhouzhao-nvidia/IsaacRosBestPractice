@@ -75,7 +75,7 @@ def load_engine(engine_file_path, plugin_path=None):
         return runtime.deserialize_cuda_engine(f.read())
 
 @click.command()
-@click.option("--threshold", type=float, default=0.1, help="Threshold for confidence")
+@click.option("--threshold", type=float, default=0.0, help="Threshold for confidence")
 @click.option("--output_file", type=str, default="./image/disparity.png", help="Output file name")
 @click.option("--left_image", type=str, default="./image/left.png", help="Left image file name")
 @click.option("--right_image", type=str, default="./image/right.png", help="Right image file name")
@@ -147,7 +147,8 @@ def main(threshold, output_file, left_image, right_image, engine_file, plugin_pa
             img = np.reshape(disparity, (INPUT_HEIGHT, INPUT_WIDTH))
             conf = np.reshape(confidence, (INPUT_HEIGHT, INPUT_WIDTH))
 
-            img[conf < threshold] = -1
+            if threshold > 0:
+                img[conf < threshold] = -1
 
             print("Writing output image to file {}".format(output_file))
             # transfer the numpy array to uint8 and save it as grayscale png
