@@ -4,7 +4,7 @@ import pycuda.driver as cuda
 import pycuda.autoinit
 import tensorrt as trt
 import ctypes
-
+import click
 import matplotlib.pyplot as plt
 from PIL import Image
 
@@ -16,19 +16,22 @@ INPUT_HEIGHT = 288
 engine_file = "/home/yizhou/workspaces/isaac_ros-dev/isaac_ros_assets/models/dnn_stereo_disparity/dnn_stereo_disparity_v4.1.0_onnx/light_ess.engine"
 plugin_path = "/home/yizhou/workspaces/isaac_ros-dev/isaac_ros_assets/models/dnn_stereo_disparity/dnn_stereo_disparity_v4.1.0_onnx/plugins/x86_64/ess_plugins.so"
 
-output_file = "./image/disparity.png"
-
 def load_and_resize_image(image_path, target_size=(INPUT_WIDTH, INPUT_HEIGHT)):
     """
-    Load an image from path and resize it to the target size.
+    Load an image from path, resize it to the target size, and normalize it.
     
     Args:
         image_path (str): Path to the image file
         target_size (tuple): Target size as (width, height)
     
     Returns:
-        PIL.Image: Resized image
+        np.ndarray: Normalized image array with shape (C, H, W) and dtype float32
     """
+    # Normalization parameters
+    pixel_mean = np.array([-128, -128, -128], dtype=np.float32)
+    normalization = np.array([0.00392156862, 0.00392156862, 0.00392156862], dtype=np.float32)
+    standard_deviation = np.array([0.5, 0.5, 0.5], dtype=np.float32)
+    
     image = Image.open(image_path)
     print(f"Original image size: {image.size}")
     
@@ -36,8 +39,25 @@ def load_and_resize_image(image_path, target_size=(INPUT_WIDTH, INPUT_HEIGHT)):
     resized_image = image.resize(target_size, Image.Resampling.LANCZOS)
     print(f"Resized image size: {resized_image.size}")
     
-    # return np.expand_dims(np.moveaxis(np.array(resized_image), 2, 0), 0)
-    return np.moveaxis(np.array(resized_image), 2, 0)
+    # Convert to numpy array (H, W, C) with float32
+    image_array = np.array(resized_image, dtype=np.float32)
+    
+    # Move axes from (H, W, C) to (C, H, W)
+    image_array = np.moveaxis(image_array, 2, 0)
+    
+    # Apply normalization: (image + pixel_mean) * normalization / standard_deviation
+    # Reshape parameters to (C, 1, 1) for broadcasting
+    pixel_mean = pixel_mean.reshape(3, 1, 1)
+    normalization = normalization.reshape(3, 1, 1)
+    standard_deviation = standard_deviation.reshape(3, 1, 1)
+    
+    # Normalize the image
+    normalized_image = (image_array + pixel_mean) * normalization / standard_deviation
+    
+    print(f"Normalized image shape: {normalized_image.shape}, dtype: {normalized_image.dtype}")
+    print(f"Normalized image range: [{normalized_image.min():.4f}, {normalized_image.max():.4f}]")
+    
+    return normalized_image
 
 
 def load_engine(engine_file_path, plugin_path=None):
@@ -53,19 +73,24 @@ def load_engine(engine_file_path, plugin_path=None):
     with open(engine_file_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
         return runtime.deserialize_cuda_engine(f.read())
 
-def main():
+@click.command()
+@click.option("--threshold", type=float, default=0.0, help="Threshold for confidence")
+@click.option("--output_file", type=str, default="./image/disparity.png", help="Output file name")
+@click.option("--left_image", type=str, default="./image/left.png", help="Left image file name")
+@click.option("--right_image", type=str, default="./image/right.png", help="Right image file name")
+def main(threshold, output_file, left_image, right_image):
     print("Running TensorRT inference for ESS Stereo Disparity")
     
     # Example: Load and resize images
     print("\n--- Image Loading and Resizing Example ---")
     
     # Load and resize the left image
-    left_image = load_and_resize_image("./image/left.png", target_size=(INPUT_WIDTH, INPUT_HEIGHT))
-    print(f"Successfully loaded and resized left image to {left_image.size}")
+    left_image = load_and_resize_image(left_image, target_size=(INPUT_WIDTH, INPUT_HEIGHT))
+    print(f"Successfully loaded and resized left image to shape {left_image.shape}")
     
     # Load and resize the right image
-    right_image = load_and_resize_image("./image/right.png", target_size=(INPUT_WIDTH, INPUT_HEIGHT))
-    print(f"Successfully loaded and resized right image to {right_image.size}")
+    right_image = load_and_resize_image(right_image, target_size=(INPUT_WIDTH, INPUT_HEIGHT))
+    print(f"Successfully loaded and resized right image to shape {right_image.shape}")
 
     # import ipdb; ipdb.set_trace()
     
@@ -85,6 +110,8 @@ def main():
                 dtype = trt.nptype(engine.get_tensor_dtype(tensor))
                 print(f"Tensor: {tensor}, Size: {size}, Dtype: {dtype}, Mode: {engine.get_tensor_mode(tensor)}")
                 
+                # import ipdb; ipdb.set_trace()
+
                 if engine.get_tensor_mode(tensor) == trt.TensorIOMode.INPUT:
                     context.set_input_shape(tensor, (1, 3, INPUT_HEIGHT, INPUT_WIDTH))
                     input_image = left_image if tensor == "input_left" else right_image
@@ -110,14 +137,20 @@ def main():
                 cuda.memcpy_dtoh_async(output_buffer[tensor_name], output_memory[tensor_name], stream)
 
             stream.synchronize()
-            output_d64 = np.array(output_buffer["output_left"], dtype=np.int64)
+            disparity = np.array(output_buffer["output_left"], dtype=np.int64)
+            confidence = np.array(output_buffer["output_conf"], dtype=np.float32)
+
             # np.savetxt('test.out', output_d64.astype(int), fmt='%i', delimiter=' ', newline=' ')
-            img = np.reshape(output_d64, (INPUT_HEIGHT, INPUT_WIDTH))
+            img = np.reshape(disparity, (INPUT_HEIGHT, INPUT_WIDTH))
+            conf = np.reshape(confidence, (INPUT_HEIGHT, INPUT_WIDTH))
+
+            img[conf < threshold] = 0
+
             print("Writing output image to file {}".format(output_file))
             # transfer the numpy array to uint8 and save it as grayscale png
             Image.fromarray(img.astype(np.uint8)).save(output_file)
 
-            import ipdb; ipdb.set_trace()
+            # import ipdb; ipdb.set_trace()
 
         # print("Execution context created successfully")
         # input_data = np.random.randn(1, 3, 224, 224).astype(np.float32)
