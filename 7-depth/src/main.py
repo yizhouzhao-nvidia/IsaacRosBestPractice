@@ -5,7 +5,6 @@ import pycuda.autoinit
 import tensorrt as trt
 import ctypes
 import click
-import matplotlib.pyplot as plt
 from PIL import Image
 
 TRT_LOGGER = trt.Logger()
@@ -13,8 +12,10 @@ INPUT_WIDTH = 480
 INPUT_HEIGHT = 288
 
 # Filenames of TensorRT plan file and input/output images.
-engine_file = "/home/yizhou/workspaces/isaac_ros-dev/isaac_ros_assets/models/dnn_stereo_disparity/dnn_stereo_disparity_v4.1.0_onnx/light_ess.engine"
-plugin_path = "/home/yizhou/workspaces/isaac_ros-dev/isaac_ros_assets/models/dnn_stereo_disparity/dnn_stereo_disparity_v4.1.0_onnx/plugins/x86_64/ess_plugins.so"
+# engine_file = "/home/yizhou/workspaces/isaac_ros-dev/isaac_ros_assets/models/dnn_stereo_disparity/dnn_stereo_disparity_v4.1.0_onnx/light_ess.engine"
+# plugin_path = "/home/yizhou/workspaces/isaac_ros-dev/isaac_ros_assets/models/dnn_stereo_disparity/dnn_stereo_disparity_v4.1.0_onnx/plugins/x86_64/ess_plugins.so"
+# engine_file = "./models/light_ess.engine"
+# plugin_path = "./models/ess_plugins.so"
 
 def load_and_resize_image(image_path, target_size=(INPUT_WIDTH, INPUT_HEIGHT)):
     """
@@ -74,11 +75,13 @@ def load_engine(engine_file_path, plugin_path=None):
         return runtime.deserialize_cuda_engine(f.read())
 
 @click.command()
-@click.option("--threshold", type=float, default=0.0, help="Threshold for confidence")
+@click.option("--threshold", type=float, default=0.1, help="Threshold for confidence")
 @click.option("--output_file", type=str, default="./image/disparity.png", help="Output file name")
 @click.option("--left_image", type=str, default="./image/left.png", help="Left image file name")
 @click.option("--right_image", type=str, default="./image/right.png", help="Right image file name")
-def main(threshold, output_file, left_image, right_image):
+@click.option("--engine_file", type=str, default="./models/light_ess.engine", help="Engine file name")
+@click.option("--plugin_path", type=str, default="./models/ess_plugins.so", help="Plugin file name")
+def main(threshold, output_file, left_image, right_image, engine_file, plugin_path):
     print("Running TensorRT inference for ESS Stereo Disparity")
     
     # Example: Load and resize images
@@ -95,7 +98,7 @@ def main(threshold, output_file, left_image, right_image):
     # import ipdb; ipdb.set_trace()
     
     print("\n--- TensorRT Inference ---")
-    with load_engine(engine_file, plugin_path) as engine:
+    with load_engine(engine_file, plugin_path=plugin_path) as engine:
         print("Engine loaded successfully")
         with engine.create_execution_context() as context:
             tensor_names = [engine.get_tensor_name(i) for i in range(engine.num_io_tensors)]
@@ -144,7 +147,7 @@ def main(threshold, output_file, left_image, right_image):
             img = np.reshape(disparity, (INPUT_HEIGHT, INPUT_WIDTH))
             conf = np.reshape(confidence, (INPUT_HEIGHT, INPUT_WIDTH))
 
-            img[conf < threshold] = 0
+            img[conf < threshold] = -1
 
             print("Writing output image to file {}".format(output_file))
             # transfer the numpy array to uint8 and save it as grayscale png
