@@ -1,4 +1,4 @@
-# Standalone Depth Prediction using ESS Tensorrt
+# 7. Standalone Depth Prediction using ESS Tensorrt
 
 This repo shows how to predict depth using a stereo camera. The model card and introduction can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/teams/isaac/models/dnn_stereo_disparity
 
