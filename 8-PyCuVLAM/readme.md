@@ -1,8 +1,33 @@
 # pycuvslam
 
+## Env set up
+
+Install uv: 
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python=3.10
+source .venv/bin/activate
+```
+
+Install pycuvslam: https://github.com/NVlabs/PyCuVSLAM/tree/main
+```
+git clone https://github.com/NVlabs/pycuvslam.git
+cd pycuvslam
+
+uv pip install -e bin/x86_64
+uv pip install -r examples/requirements.txt
+```
+
+**RUN EVERYTIME!**
+```bash
+# replace with you python3.10 python lib
+export LD_LIBRARY_PATH=/home/yizhou/.local/share/uv/python/cpython-3.10.18-linux-x86_64-gnu/lib:$LD_LIBRARY_PATH 
+```
+
 ## Realsense best practice
 
 Refer to: https://github.com/yizhouzhao-nvidia/IsaacRosBestPractice/tree/main/3-realsense
+
 ```
 # Clone the repository
 git clone https://github.com/IntelRealSense/librealsense.git
@@ -20,3 +45,11 @@ make -j$(nproc)
 # Install system-wide
 sudo make install
 ```
+
+Run an example:
+```
+# enter pycuvslam/examples/realsense
+python run_stereo.py
+
+```
+
